@@ -2,17 +2,18 @@
 
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from hyphen.base_client import BaseClient
-
-
-class QrSize:
-    """QR code size constants."""
-
-    SMALL = "small"
-    MEDIUM = "medium"
-    LARGE = "large"
+from hyphen.types import (
+    CreateQrCodeOptions,
+    CreateShortCodeOptions,
+    QrCode,
+    QrCodesResponse,
+    ShortCode,
+    ShortCodesResponse,
+    UpdateShortCodeOptions,
+)
 
 
 class Link:
@@ -47,8 +48,8 @@ class Link:
         self,
         long_url: str,
         domain: str,
-        options: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        options: Optional[CreateShortCodeOptions] = None,
+    ) -> ShortCode:
         """
         Create a new short code.
 
@@ -58,26 +59,27 @@ class Link:
             options: Optional parameters like tags, title, etc.
 
         Returns:
-            Dictionary containing the created short code information
+            ShortCode object containing the created short code information
 
         Raises:
             requests.HTTPError: If the request fails
         """
         endpoint = f"/api/organizations/{self.organization_id}/link/codes"
-        data = {
+        data: Dict[str, Any] = {
             "long_url": long_url,
             "domain": domain,
         }
         if options:
             data.update(options)
 
-        return self.client.post(endpoint, data=data)
+        response = self.client.post(endpoint, data=data)
+        return ShortCode.from_dict(response)
 
     def update_short_code(
         self,
         code: str,
-        options: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        options: UpdateShortCodeOptions,
+    ) -> ShortCode:
         """
         Update an existing short code.
 
@@ -86,15 +88,16 @@ class Link:
             options: Parameters to update (title, tags, long_url, etc.)
 
         Returns:
-            Dictionary containing the updated short code information
+            ShortCode object containing the updated short code information
 
         Raises:
             requests.HTTPError: If the request fails
         """
         endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}"
-        return self.client.put(endpoint, data=options)
+        response = self.client.put(endpoint, data=cast(Dict[str, Any], options))
+        return ShortCode.from_dict(response)
 
-    def get_short_code(self, code: str) -> Dict[str, Any]:
+    def get_short_code(self, code: str) -> ShortCode:
         """
         Get a specific short code by its identifier.
 
@@ -102,28 +105,33 @@ class Link:
             code: The code identifier for the short code to retrieve
 
         Returns:
-            Dictionary containing the short code information
+            ShortCode object containing the short code information
 
         Raises:
             requests.HTTPError: If the request fails
         """
         endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}"
-        return self.client.get(endpoint)
+        response = self.client.get(endpoint)
+        return ShortCode.from_dict(response)
 
     def get_short_codes(
         self,
         title: Optional[str] = None,
         tags: Optional[List[str]] = None,
-    ) -> List[Dict[str, Any]]:
+        page_number: Optional[int] = None,
+        page_size: Optional[int] = None,
+    ) -> ShortCodesResponse:
         """
         Get a list of short codes with optional filtering.
 
         Args:
             title: Optional title to filter short codes
             tags: Optional list of tags to filter short codes
+            page_number: Optional page number for pagination
+            page_size: Optional page size for pagination
 
         Returns:
-            List of dictionaries containing short code information
+            ShortCodesResponse with paginated list of short codes
 
         Raises:
             requests.HTTPError: If the request fails
@@ -135,8 +143,13 @@ class Link:
             params["title"] = title
         if tags:
             params["tags"] = ",".join(tags)
+        if page_number is not None:
+            params["pageNum"] = page_number
+        if page_size is not None:
+            params["pageSize"] = page_size
 
-        return self.client.get(endpoint, params=params if params else None)
+        response = self.client.get(endpoint, params=params if params else None)
+        return ShortCodesResponse.from_dict(response)
 
     def get_tags(self) -> List[str]:
         """
@@ -149,7 +162,8 @@ class Link:
             requests.HTTPError: If the request fails
         """
         endpoint = f"/api/organizations/{self.organization_id}/link/tags"
-        return self.client.get(endpoint)
+        response = self.client.get(endpoint)
+        return list(response) if response else []
 
     def get_short_code_stats(
         self,
@@ -179,29 +193,26 @@ class Link:
         if end_date:
             params["end_date"] = end_date.isoformat()
 
-        return self.client.get(endpoint, params=params if params else None)
+        return dict(self.client.get(endpoint, params=params if params else None))
 
-    def delete_short_code(self, code: str) -> Any:
+    def delete_short_code(self, code: str) -> None:
         """
         Delete a short code.
 
         Args:
             code: The code identifier for the short code to delete
 
-        Returns:
-            Response data (may be None for successful deletion)
-
         Raises:
             requests.HTTPError: If the request fails
         """
         endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}"
-        return self.client.delete(endpoint)
+        self.client.delete(endpoint)
 
     def create_qr_code(
         self,
         code: str,
-        options: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        options: Optional[CreateQrCodeOptions] = None,
+    ) -> QrCode:
         """
         Create a QR code for a short code.
 
@@ -210,16 +221,24 @@ class Link:
             options: Optional parameters (title, backgroundColor, color, size, logo)
 
         Returns:
-            Dictionary containing the QR code information
+            QrCode object containing the QR code information
 
         Raises:
             requests.HTTPError: If the request fails
         """
         endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}/qr"
-        data = options or {}
-        return self.client.post(endpoint, data=data)
+        data: Dict[str, Any] = {}
+        if options:
+            # Convert snake_case to camelCase for API
+            for key, value in options.items():
+                if key == "background_color":
+                    data["backgroundColor"] = value
+                else:
+                    data[key] = value
+        response = self.client.post(endpoint, data=data)
+        return QrCode.from_dict(response)
 
-    def get_qr_code(self, code: str, qr_id: str) -> Dict[str, Any]:
+    def get_qr_code(self, code: str, qr_id: str) -> QrCode:
         """
         Get a specific QR code by its ID.
 
@@ -228,31 +247,46 @@ class Link:
             qr_id: The ID of the QR code to retrieve
 
         Returns:
-            Dictionary containing the QR code information
+            QrCode object containing the QR code information
 
         Raises:
             requests.HTTPError: If the request fails
         """
         endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}/qr/{qr_id}"
-        return self.client.get(endpoint)
+        response = self.client.get(endpoint)
+        return QrCode.from_dict(response)
 
-    def get_qr_codes(self, code: str) -> List[Dict[str, Any]]:
+    def get_qr_codes(
+        self,
+        code: str,
+        page_number: Optional[int] = None,
+        page_size: Optional[int] = None,
+    ) -> QrCodesResponse:
         """
         Get all QR codes for a short code.
 
         Args:
             code: The code identifier for the short code
+            page_number: Optional page number for pagination
+            page_size: Optional page size for pagination
 
         Returns:
-            List of dictionaries containing QR code information
+            QrCodesResponse with paginated list of QR codes
 
         Raises:
             requests.HTTPError: If the request fails
         """
         endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}/qr"
-        return self.client.get(endpoint)
+        params: Dict[str, Any] = {}
+        if page_number is not None:
+            params["pageNum"] = page_number
+        if page_size is not None:
+            params["pageSize"] = page_size
 
-    def delete_qr_code(self, code: str, qr_id: str) -> Any:
+        response = self.client.get(endpoint, params=params if params else None)
+        return QrCodesResponse.from_dict(response)
+
+    def delete_qr_code(self, code: str, qr_id: str) -> None:
         """
         Delete a QR code.
 
@@ -260,11 +294,8 @@ class Link:
             code: The code identifier for the short code
             qr_id: The ID of the QR code to delete
 
-        Returns:
-            Response data (may be None for successful deletion)
-
         Raises:
             requests.HTTPError: If the request fails
         """
         endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}/qr/{qr_id}"
-        return self.client.delete(endpoint)
+        self.client.delete(endpoint)
