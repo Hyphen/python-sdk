@@ -1,7 +1,7 @@
 """Base client for Hyphen SDK."""
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 import requests
 
@@ -9,7 +9,7 @@ import requests
 class BaseClient:
     """Base client class for making HTTP requests to Hyphen API."""
 
-    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://api.hyphen.ai"):
+    def __init__(self, api_key: str | None = None, base_url: str = "https://api.hyphen.ai"):
         """
         Initialize the base client.
 
@@ -36,8 +36,8 @@ class BaseClient:
         self,
         method: str,
         endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
     ) -> Any:
         """
         Make an HTTP request to the Hyphen API.
@@ -69,15 +69,15 @@ class BaseClient:
 
         return response.json()
 
-    def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Any:
+    def get(self, endpoint: str, params: dict[str, Any] | None = None) -> Any:
         """Make a GET request."""
         return self._request("GET", endpoint, params=params)
 
-    def post(self, endpoint: str, data: Optional[Dict[str, Any]] = None) -> Any:
+    def post(self, endpoint: str, data: dict[str, Any] | None = None) -> Any:
         """Make a POST request."""
         return self._request("POST", endpoint, data=data)
 
-    def put(self, endpoint: str, data: Optional[Dict[str, Any]] = None) -> Any:
+    def put(self, endpoint: str, data: dict[str, Any] | None = None) -> Any:
         """Make a PUT request."""
         return self._request("PUT", endpoint, data=data)
 

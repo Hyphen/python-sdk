@@ -1,7 +1,8 @@
 """Feature Toggle management for Hyphen SDK."""
 
 import os
-from typing import Any, Callable, Dict, List, Optional, Union
+from collections.abc import Callable
+from typing import Any
 
 from hyphen.base_client import BaseClient
 from hyphen.types import Evaluation, EvaluationResponse, ToggleContext
@@ -24,12 +25,12 @@ class FeatureToggle:
 
     def __init__(
         self,
-        application_id: Optional[str] = None,
-        environment: Optional[str] = None,
-        api_key: Optional[str] = None,
+        application_id: str | None = None,
+        environment: str | None = None,
+        api_key: str | None = None,
         base_url: str = "https://api.hyphen.ai",
-        default_context: Optional[ToggleContext] = None,
-        on_error: Optional[Callable[[Exception], None]] = None,
+        default_context: ToggleContext | None = None,
+        on_error: Callable[[Exception], None] | None = None,
     ):
         """
         Initialize the FeatureToggle client.
@@ -68,12 +69,12 @@ class FeatureToggle:
         self.client = BaseClient(api_key=resolved_api_key, base_url=base_url)
 
     def _build_payload(
-        self, context: Optional[ToggleContext] = None
-    ) -> Dict[str, Any]:
+        self, context: ToggleContext | None = None
+    ) -> dict[str, Any]:
         """Build the API request payload for toggle evaluation."""
         ctx = context or self.default_context or ToggleContext()
 
-        payload: Dict[str, Any] = {
+        payload: dict[str, Any] = {
             "application": self.application_id,
             "environment": self.environment,
         }
@@ -84,7 +85,7 @@ class FeatureToggle:
             payload["ipAddress"] = ctx.ip_address
         if ctx.user:
             # Convert snake_case to camelCase for API
-            user_payload: Dict[str, Any] = {}
+            user_payload: dict[str, Any] = {}
             for key, value in ctx.user.items():
                 if key == "custom_attributes":
                     user_payload["customAttributes"] = value
@@ -104,7 +105,7 @@ class FeatureToggle:
         raise error
 
     def evaluate(
-        self, context: Optional[ToggleContext] = None
+        self, context: ToggleContext | None = None
     ) -> EvaluationResponse:
         """
         Evaluate all feature toggles for the given context.
@@ -123,7 +124,7 @@ class FeatureToggle:
             payload = self._build_payload(context)
             response = self.client.post("/toggle/evaluate", data=payload)
 
-            toggles: Dict[str, Evaluation] = {}
+            toggles: dict[str, Evaluation] = {}
             if isinstance(response, dict) and "toggles" in response:
                 for name, toggle_data in response["toggles"].items():
                     toggles[name] = Evaluation(
@@ -142,7 +143,7 @@ class FeatureToggle:
         self,
         toggle_name: str,
         default: Any = None,
-        context: Optional[ToggleContext] = None,
+        context: ToggleContext | None = None,
     ) -> Any:
         """
         Get a single feature toggle value by name.
@@ -175,7 +176,7 @@ class FeatureToggle:
         self,
         toggle_name: str,
         default: bool = False,
-        context: Optional[ToggleContext] = None,
+        context: ToggleContext | None = None,
     ) -> bool:
         """
         Get a boolean feature toggle value.
@@ -197,7 +198,7 @@ class FeatureToggle:
         self,
         toggle_name: str,
         default: str = "",
-        context: Optional[ToggleContext] = None,
+        context: ToggleContext | None = None,
     ) -> str:
         """
         Get a string feature toggle value.
@@ -218,9 +219,9 @@ class FeatureToggle:
     def get_number(
         self,
         toggle_name: str,
-        default: Union[int, float] = 0,
-        context: Optional[ToggleContext] = None,
-    ) -> Union[int, float]:
+        default: int | float = 0,
+        context: ToggleContext | None = None,
+    ) -> int | float:
         """
         Get a numeric feature toggle value.
 
@@ -240,9 +241,9 @@ class FeatureToggle:
     def get_object(
         self,
         toggle_name: str,
-        default: Optional[Dict[str, Any]] = None,
-        context: Optional[ToggleContext] = None,
-    ) -> Dict[str, Any]:
+        default: dict[str, Any] | None = None,
+        context: ToggleContext | None = None,
+    ) -> dict[str, Any]:
         """
         Get a JSON object feature toggle value.
 
@@ -263,9 +264,9 @@ class FeatureToggle:
 
     def get_toggles(
         self,
-        toggle_names: List[str],
-        context: Optional[ToggleContext] = None,
-    ) -> Dict[str, Any]:
+        toggle_names: list[str],
+        context: ToggleContext | None = None,
+    ) -> dict[str, Any]:
         """
         Get multiple feature toggle values by their names.
 
@@ -284,7 +285,7 @@ class FeatureToggle:
             payload["toggles"] = toggle_names
             response = self.client.post("/toggle/evaluate", data=payload)
 
-            result: Dict[str, Any] = {}
+            result: dict[str, Any] = {}
             if isinstance(response, dict) and "toggles" in response:
                 for name in toggle_names:
                     toggle_data = response["toggles"].get(name)

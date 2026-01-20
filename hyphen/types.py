@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from typing_extensions import TypedDict
 
@@ -21,7 +21,7 @@ class UserContext(TypedDict, total=False):
     id: str
     email: str
     name: str
-    custom_attributes: Dict[str, Any]
+    custom_attributes: dict[str, Any]
 
 
 @dataclass
@@ -40,8 +40,8 @@ class ToggleContext:
 
     targeting_key: str = ""
     ip_address: str = ""
-    user: Optional[UserContext] = None
-    custom_attributes: Dict[str, Any] = field(default_factory=dict)
+    user: UserContext | None = None
+    custom_attributes: dict[str, Any] = field(default_factory=dict)
 
 
 class ToggleType(str, Enum):
@@ -66,10 +66,10 @@ class Evaluation:
     """
 
     key: str
-    value: Union[bool, str, int, float, Dict[str, Any], None]
+    value: bool | str | int | float | dict[str, Any] | None
     value_type: str
     reason: str = ""
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 @dataclass
@@ -80,7 +80,7 @@ class EvaluationResponse:
         toggles: Dictionary mapping toggle names to their evaluations.
     """
 
-    toggles: Dict[str, Evaluation]
+    toggles: dict[str, Evaluation]
 
 
 # Link Types
@@ -104,7 +104,7 @@ class CreateShortCodeOptions(TypedDict, total=False):
 
     code: str
     title: str
-    tags: List[str]
+    tags: list[str]
 
 
 class UpdateShortCodeOptions(TypedDict, total=False):
@@ -118,7 +118,7 @@ class UpdateShortCodeOptions(TypedDict, total=False):
 
     long_url: str
     title: str
-    tags: List[str]
+    tags: list[str]
 
 
 class CreateQrCodeOptions(TypedDict, total=False):
@@ -166,12 +166,12 @@ class ShortCode:
     long_url: str
     domain: str
     created_at: str
-    title: Optional[str] = None
-    tags: Optional[List[str]] = None
-    organization_id: Optional[OrganizationInfo] = None
+    title: str | None = None
+    tags: list[str] | None = None
+    organization_id: OrganizationInfo | None = None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ShortCode":
+    def from_dict(cls, data: dict[str, Any]) -> "ShortCode":
         """Create a ShortCode from an API response dictionary."""
         return cls(
             id=data.get("id", ""),
@@ -199,10 +199,10 @@ class ShortCodesResponse:
     total: int
     page_num: int
     page_size: int
-    data: List[ShortCode]
+    data: list[ShortCode]
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ShortCodesResponse":
+    def from_dict(cls, data: dict[str, Any]) -> "ShortCodesResponse":
         """Create a ShortCodesResponse from an API response dictionary."""
         return cls(
             total=data.get("total", 0),
@@ -225,13 +225,13 @@ class QrCode:
     """
 
     id: str
-    title: Optional[str] = None
-    qr_code: Optional[str] = None
-    qr_code_bytes: Optional[bytes] = None
-    qr_link: Optional[str] = None
+    title: str | None = None
+    qr_code: str | None = None
+    qr_code_bytes: bytes | None = None
+    qr_link: str | None = None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "QrCode":
+    def from_dict(cls, data: dict[str, Any]) -> "QrCode":
         """Create a QrCode from an API response dictionary."""
         qr_code_bytes = None
         if "qrCodeBytes" in data and data["qrCodeBytes"]:
@@ -260,10 +260,10 @@ class QrCodesResponse:
     total: int
     page_num: int
     page_size: int
-    data: List[QrCode]
+    data: list[QrCode]
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "QrCodesResponse":
+    def from_dict(cls, data: dict[str, Any]) -> "QrCodesResponse":
         """Create a QrCodesResponse from an API response dictionary."""
         return cls(
             total=data.get("total", 0),
@@ -297,10 +297,10 @@ class IpLocation:
     lng: float = 0.0
     postal_code: str = ""
     timezone: str = ""
-    geoname_id: Optional[int] = None
+    geoname_id: int | None = None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "IpLocation":
+    def from_dict(cls, data: dict[str, Any]) -> "IpLocation":
         """Create an IpLocation from an API response dictionary."""
         return cls(
             country=data.get("country", ""),
@@ -329,7 +329,7 @@ class IpInfo:
     location: IpLocation
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "IpInfo":
+    def from_dict(cls, data: dict[str, Any]) -> "IpInfo":
         """Create an IpInfo from an API response dictionary."""
         return cls(
             ip=data.get("ip", ""),
@@ -353,7 +353,7 @@ class IpInfoError:
     error_message: str
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "IpInfoError":
+    def from_dict(cls, data: dict[str, Any]) -> "IpInfoError":
         """Create an IpInfoError from an API response dictionary."""
         return cls(
             ip=data.get("ip", ""),

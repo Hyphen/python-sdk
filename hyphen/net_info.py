@@ -1,6 +1,5 @@
 """NetInfo for IP geolocation in Hyphen SDK."""
 
-from typing import List, Optional, Union
 
 from hyphen.base_client import BaseClient
 from hyphen.types import IpInfo, IpInfoError
@@ -11,7 +10,7 @@ class NetInfo:
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         base_url: str = "https://api.hyphen.ai",
     ):
         """
@@ -23,7 +22,7 @@ class NetInfo:
         """
         self.client = BaseClient(api_key=api_key, base_url=base_url)
 
-    def get_ip_info(self, ip_address: str) -> Union[IpInfo, IpInfoError]:
+    def get_ip_info(self, ip_address: str) -> IpInfo | IpInfoError:
         """
         Get geolocation information for a single IP address.
 
@@ -42,7 +41,7 @@ class NetInfo:
             return IpInfoError.from_dict(response)
         return IpInfo.from_dict(response)
 
-    def get_ip_infos(self, ip_addresses: List[str]) -> List[Union[IpInfo, IpInfoError]]:
+    def get_ip_infos(self, ip_addresses: list[str]) -> list[IpInfo | IpInfoError]:
         """
         Get geolocation information for multiple IP addresses.
 
@@ -58,7 +57,7 @@ class NetInfo:
         endpoint = "/api/net-info/ips"
         data = {"ips": ip_addresses}
         response = self.client.post(endpoint, data=data)
-        results: List[Union[IpInfo, IpInfoError]] = []
+        results: list[IpInfo | IpInfoError] = []
         for item in response:
             if "errorMessage" in item:
                 results.append(IpInfoError.from_dict(item))

@@ -2,7 +2,7 @@
 
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, cast
 
 from hyphen.base_client import BaseClient
 from hyphen.types import (
@@ -21,8 +21,8 @@ class Link:
 
     def __init__(
         self,
-        organization_id: Optional[str] = None,
-        api_key: Optional[str] = None,
+        organization_id: str | None = None,
+        api_key: str | None = None,
         base_url: str = "https://api.hyphen.ai",
     ):
         """
@@ -48,7 +48,7 @@ class Link:
         self,
         long_url: str,
         domain: str,
-        options: Optional[CreateShortCodeOptions] = None,
+        options: CreateShortCodeOptions | None = None,
     ) -> ShortCode:
         """
         Create a new short code.
@@ -65,7 +65,7 @@ class Link:
             requests.HTTPError: If the request fails
         """
         endpoint = f"/api/organizations/{self.organization_id}/link/codes"
-        data: Dict[str, Any] = {
+        data: dict[str, Any] = {
             "long_url": long_url,
             "domain": domain,
         }
@@ -94,7 +94,7 @@ class Link:
             requests.HTTPError: If the request fails
         """
         endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}"
-        response = self.client.put(endpoint, data=cast(Dict[str, Any], options))
+        response = self.client.put(endpoint, data=cast(dict[str, Any], options))
         return ShortCode.from_dict(response)
 
     def get_short_code(self, code: str) -> ShortCode:
@@ -116,10 +116,10 @@ class Link:
 
     def get_short_codes(
         self,
-        title: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        page_number: Optional[int] = None,
-        page_size: Optional[int] = None,
+        title: str | None = None,
+        tags: list[str] | None = None,
+        page_number: int | None = None,
+        page_size: int | None = None,
     ) -> ShortCodesResponse:
         """
         Get a list of short codes with optional filtering.
@@ -137,7 +137,7 @@ class Link:
             requests.HTTPError: If the request fails
         """
         endpoint = f"/api/organizations/{self.organization_id}/link/codes"
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
 
         if title:
             params["title"] = title
@@ -151,7 +151,7 @@ class Link:
         response = self.client.get(endpoint, params=params if params else None)
         return ShortCodesResponse.from_dict(response)
 
-    def get_tags(self) -> List[str]:
+    def get_tags(self) -> list[str]:
         """
         Get all tags for the organization.
 
@@ -168,9 +168,9 @@ class Link:
     def get_short_code_stats(
         self,
         code: str,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-    ) -> Dict[str, Any]:
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> dict[str, Any]:
         """
         Get statistics for a short code.
 
@@ -186,7 +186,7 @@ class Link:
             requests.HTTPError: If the request fails
         """
         endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}/stats"
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
 
         if start_date:
             params["start_date"] = start_date.isoformat()
@@ -211,7 +211,7 @@ class Link:
     def create_qr_code(
         self,
         code: str,
-        options: Optional[CreateQrCodeOptions] = None,
+        options: CreateQrCodeOptions | None = None,
     ) -> QrCode:
         """
         Create a QR code for a short code.
@@ -227,7 +227,7 @@ class Link:
             requests.HTTPError: If the request fails
         """
         endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}/qr"
-        data: Dict[str, Any] = {}
+        data: dict[str, Any] = {}
         if options:
             # Convert snake_case to camelCase for API
             for key, value in options.items():
@@ -259,8 +259,8 @@ class Link:
     def get_qr_codes(
         self,
         code: str,
-        page_number: Optional[int] = None,
-        page_size: Optional[int] = None,
+        page_number: int | None = None,
+        page_size: int | None = None,
     ) -> QrCodesResponse:
         """
         Get all QR codes for a short code.
@@ -277,7 +277,7 @@ class Link:
             requests.HTTPError: If the request fails
         """
         endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}/qr"
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if page_number is not None:
             params["pageNum"] = page_number
         if page_size is not None:
