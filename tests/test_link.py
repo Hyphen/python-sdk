@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from hyphen import Link
+from hyphen import Link, QrCode, QrCodesResponse, ShortCode, ShortCodesResponse
 
 
 def test_link_init_with_params() -> None:
@@ -37,9 +37,16 @@ def test_link_init_missing_org_id() -> None:
 
 @patch("hyphen.link.BaseClient")
 def test_create_short_code(mock_client_class: Mock) -> None:
-    """Test create_short_code method."""
+    """Test create_short_code method returns ShortCode."""
     mock_client = Mock()
-    mock_client.post.return_value = {"code": "abc123", "short_url": "https://test.h4n.link/abc123"}
+    mock_client.post.return_value = {
+        "id": "sc_123",
+        "code": "abc123",
+        "long_url": "https://hyphen.ai",
+        "domain": "test.h4n.link",
+        "createdAt": "2025-01-01T00:00:00Z",
+        "tags": ["test"],
+    }
     mock_client_class.return_value = mock_client
 
     link = Link(organization_id="org_123", api_key="key_123")
@@ -49,22 +56,32 @@ def test_create_short_code(mock_client_class: Mock) -> None:
         options={"tags": ["test"]},
     )
 
-    assert result["code"] == "abc123"
+    assert isinstance(result, ShortCode)
+    assert result.code == "abc123"
+    assert result.long_url == "https://hyphen.ai"
     mock_client.post.assert_called_once()
 
 
 @patch("hyphen.link.BaseClient")
 def test_update_short_code(mock_client_class: Mock) -> None:
-    """Test update_short_code method."""
+    """Test update_short_code method returns ShortCode."""
     mock_client = Mock()
-    mock_client.put.return_value = {"code": "abc123", "title": "Updated"}
+    mock_client.patch.return_value = {
+        "id": "sc_123",
+        "code": "abc123",
+        "long_url": "https://hyphen.ai",
+        "domain": "test.h4n.link",
+        "createdAt": "2025-01-01T00:00:00Z",
+        "title": "Updated",
+    }
     mock_client_class.return_value = mock_client
 
     link = Link(organization_id="org_123", api_key="key_123")
     result = link.update_short_code("abc123", {"title": "Updated"})
 
-    assert result["title"] == "Updated"
-    mock_client.put.assert_called_once_with(
+    assert isinstance(result, ShortCode)
+    assert result.title == "Updated"
+    mock_client.patch.assert_called_once_with(
         "/api/organizations/org_123/link/codes/abc123",
         data={"title": "Updated"}
     )
@@ -72,29 +89,54 @@ def test_update_short_code(mock_client_class: Mock) -> None:
 
 @patch("hyphen.link.BaseClient")
 def test_get_short_code(mock_client_class: Mock) -> None:
-    """Test get_short_code method."""
+    """Test get_short_code method returns ShortCode."""
     mock_client = Mock()
-    mock_client.get.return_value = {"code": "abc123", "long_url": "https://hyphen.ai"}
+    mock_client.get.return_value = {
+        "id": "sc_123",
+        "code": "abc123",
+        "long_url": "https://hyphen.ai",
+        "domain": "test.h4n.link",
+        "createdAt": "2025-01-01T00:00:00Z",
+    }
     mock_client_class.return_value = mock_client
 
     link = Link(organization_id="org_123", api_key="key_123")
     result = link.get_short_code("abc123")
 
-    assert result["code"] == "abc123"
+    assert isinstance(result, ShortCode)
+    assert result.code == "abc123"
+    assert result.long_url == "https://hyphen.ai"
     mock_client.get.assert_called_once_with("/api/organizations/org_123/link/codes/abc123")
 
 
 @patch("hyphen.link.BaseClient")
 def test_get_short_codes(mock_client_class: Mock) -> None:
-    """Test get_short_codes method."""
+    """Test get_short_codes method returns ShortCodesResponse."""
     mock_client = Mock()
-    mock_client.get.return_value = [{"code": "abc123"}, {"code": "def456"}]
+    mock_client.get.return_value = {
+        "total": 2,
+        "pageNum": 1,
+        "pageSize": 10,
+        "data": [
+            {
+                "id": "1", "code": "abc123", "long_url": "https://a.com",
+                "domain": "s.lnk", "createdAt": "2025-01-01"
+            },
+            {
+                "id": "2", "code": "def456", "long_url": "https://b.com",
+                "domain": "s.lnk", "createdAt": "2025-01-02"
+            },
+        ],
+    }
     mock_client_class.return_value = mock_client
 
     link = Link(organization_id="org_123", api_key="key_123")
     result = link.get_short_codes(title="Test", tags=["tag1", "tag2"])
 
-    assert len(result) == 2
+    assert isinstance(result, ShortCodesResponse)
+    assert result.total == 2
+    assert len(result.data) == 2
+    assert result.data[0].code == "abc123"
     mock_client.get.assert_called_once()
 
 
@@ -110,7 +152,7 @@ def test_get_tags(mock_client_class: Mock) -> None:
 
     assert len(result) == 3
     assert "tag1" in result
-    mock_client.get.assert_called_once_with("/api/organizations/org_123/link/tags")
+    mock_client.get.assert_called_once_with("/api/organizations/org_123/link/codes/tags")
 
 
 @patch("hyphen.link.BaseClient")
@@ -131,7 +173,7 @@ def test_get_short_code_stats(mock_client_class: Mock) -> None:
 
 @patch("hyphen.link.BaseClient")
 def test_delete_short_code(mock_client_class: Mock) -> None:
-    """Test delete_short_code method."""
+    """Test delete_short_code method returns None."""
     mock_client = Mock()
     mock_client.delete.return_value = None
     mock_client_class.return_value = mock_client
@@ -145,49 +187,66 @@ def test_delete_short_code(mock_client_class: Mock) -> None:
 
 @patch("hyphen.link.BaseClient")
 def test_create_qr_code(mock_client_class: Mock) -> None:
-    """Test create_qr_code method."""
+    """Test create_qr_code method returns QrCode."""
     mock_client = Mock()
-    mock_client.post.return_value = {"qr_id": "qr_123", "url": "https://example.com/qr.png"}
+    mock_client.post.return_value = {
+        "id": "qr_123",
+        "title": "My QR",
+        "qrCode": "base64data",
+        "qrLink": "https://example.com/qr.png",
+    }
     mock_client_class.return_value = mock_client
 
     link = Link(organization_id="org_123", api_key="key_123")
     result = link.create_qr_code("abc123", options={"title": "My QR"})
 
-    assert result["qr_id"] == "qr_123"
+    assert isinstance(result, QrCode)
+    assert result.id == "qr_123"
+    assert result.title == "My QR"
     mock_client.post.assert_called_once()
 
 
 @patch("hyphen.link.BaseClient")
 def test_get_qr_code(mock_client_class: Mock) -> None:
-    """Test get_qr_code method."""
+    """Test get_qr_code method returns QrCode."""
     mock_client = Mock()
-    mock_client.get.return_value = {"qr_id": "qr_123"}
+    mock_client.get.return_value = {"id": "qr_123", "title": "My QR"}
     mock_client_class.return_value = mock_client
 
     link = Link(organization_id="org_123", api_key="key_123")
     result = link.get_qr_code("abc123", "qr_123")
 
-    assert result["qr_id"] == "qr_123"
-    mock_client.get.assert_called_once_with("/api/organizations/org_123/link/codes/abc123/qr/qr_123")
+    assert isinstance(result, QrCode)
+    assert result.id == "qr_123"
+    mock_client.get.assert_called_once_with("/api/organizations/org_123/link/codes/abc123/qrs/qr_123")
 
 
 @patch("hyphen.link.BaseClient")
 def test_get_qr_codes(mock_client_class: Mock) -> None:
-    """Test get_qr_codes method."""
+    """Test get_qr_codes method returns QrCodesResponse."""
     mock_client = Mock()
-    mock_client.get.return_value = [{"qr_id": "qr_123"}, {"qr_id": "qr_456"}]
+    mock_client.get.return_value = {
+        "total": 2,
+        "pageNum": 1,
+        "pageSize": 10,
+        "data": [{"id": "qr_123"}, {"id": "qr_456"}],
+    }
     mock_client_class.return_value = mock_client
 
     link = Link(organization_id="org_123", api_key="key_123")
     result = link.get_qr_codes("abc123")
 
-    assert len(result) == 2
-    mock_client.get.assert_called_once_with("/api/organizations/org_123/link/codes/abc123/qr")
+    assert isinstance(result, QrCodesResponse)
+    assert result.total == 2
+    assert len(result.data) == 2
+    mock_client.get.assert_called_once_with(
+        "/api/organizations/org_123/link/codes/abc123/qrs", params=None
+    )
 
 
 @patch("hyphen.link.BaseClient")
 def test_delete_qr_code(mock_client_class: Mock) -> None:
-    """Test delete_qr_code method."""
+    """Test delete_qr_code method returns None."""
     mock_client = Mock()
     mock_client.delete.return_value = None
     mock_client_class.return_value = mock_client
@@ -196,4 +255,4 @@ def test_delete_qr_code(mock_client_class: Mock) -> None:
     result = link.delete_qr_code("abc123", "qr_123")
 
     assert result is None
-    mock_client.delete.assert_called_once_with("/api/organizations/org_123/link/codes/abc123/qr/qr_123")
+    mock_client.delete.assert_called_once_with("/api/organizations/org_123/link/codes/abc123/qrs/qr_123")

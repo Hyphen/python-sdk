@@ -28,12 +28,54 @@ export HYPHEN_ORGANIZATION_ID="your_organization_id"
 
 ## Feature Toggles
 
-Manage feature flags for your application.
+Manage feature flags for your application with targeting support.
 
 * [Website](https://hyphen.ai)
 * [Guides](https://docs.hyphen.ai)
 
-### Get a Single Toggle
+### Basic Usage
+
+```python
+from hyphen import FeatureToggle, ToggleContext
+
+toggle = FeatureToggle(
+    application_id='your_application_id',
+    api_key='your_api_key',
+    environment='production',  # Optional, defaults to HYPHEN_ENVIRONMENT or "production"
+)
+
+# Get a boolean toggle with default value
+enabled = toggle.get_boolean('my-feature', default=False)
+print('Feature enabled:', enabled)
+```
+
+### Targeting Context
+
+Use targeting context to evaluate toggles based on user attributes:
+
+```python
+from hyphen import FeatureToggle, ToggleContext
+
+# Set a default context for all evaluations
+toggle = FeatureToggle(
+    application_id='your_application_id',
+    api_key='your_api_key',
+    default_context=ToggleContext(
+        targeting_key='user_123',
+        user={'id': 'user_123', 'email': 'user@example.com'},
+    )
+)
+
+# Or pass context per request
+context = ToggleContext(
+    targeting_key='user_456',
+    ip_address='192.168.1.1',
+    custom_attributes={'plan': 'premium', 'beta_tester': True}
+)
+enabled = toggle.get_boolean('premium-feature', default=False, context=context)
+```
+
+### Type-Safe Toggle Methods
 
 ```python
 from hyphen import FeatureToggle
@@ -43,8 +85,17 @@ toggle = FeatureToggle(
     api_key='your_api_key',
 )
 
-value = toggle.get_toggle('hyphen-sdk-boolean')
-print('Toggle value:', value)
+# Boolean toggles
+enabled = toggle.get_boolean('feature-flag', default=False)
+
+# String toggles
+theme = toggle.get_string('ui-theme', default='light')
+
+# Numeric toggles
+max_items = toggle.get_number('max-items', default=10)
+
+# JSON object toggles
+config = toggle.get_object('feature-config', default={'enabled': False})
 ```
 
 ### Get Multiple Toggles
@@ -57,8 +108,26 @@ toggle = FeatureToggle(
     api_key='your_api_key',
 )
 
-toggles = toggle.get_toggles(['hyphen-sdk-boolean', 'hyphen-sdk-number', 'hyphen-sdk-string'])
-print('Toggles:', toggles)
+toggles = toggle.get_toggles(['feature-a', 'feature-b', 'feature-c'])
+print('Toggles:', toggles)  # {'feature-a': True, 'feature-b': 42, 'feature-c': 'enabled'}
+```
+
+### Error Handling
+
+```python
+from hyphen import FeatureToggle
+
+def handle_toggle_error(error):
+    print(f'Toggle evaluation failed: {error}')
+
+toggle = FeatureToggle(
+    application_id='your_application_id',
+    api_key='your_api_key',
+    on_error=handle_toggle_error,  # Errors call this instead of raising
+)
+
+# Returns default value on error instead of raising
+enabled = toggle.get_boolean('my-feature', default=False)
 ```
 
 Toggles support multiple data types:
@@ -331,6 +400,23 @@ ruff check hyphen tests
 mypy hyphen
 ```
 
+### Releasing
+
+Releases are published to [PyPI](https://pypi.org/project/hyphen/) automatically when a GitHub Release is created.
+
+To release a new version:
+
+1. Update the version in `pyproject.toml` and `hyphen/__init__.py`
+2. Commit the version change: `git commit -am "chore: bump version to X.Y.Z"`
+3. Push to main: `git push origin main`
+4. Create a new [GitHub Release](https://github.com/Hyphen/python-sdk/releases/new):
+   - Tag: `vX.Y.Z` (e.g., `v0.1.0`)
+   - Title: `vX.Y.Z`
+   - Description: Release notes
+5. The release workflow will automatically run tests and publish to PyPI
+
+**Note:** Publishing uses PyPI's trusted publisher (OIDC) - no API token needed.
+
 ## Contributing
 
 We welcome contributions! Please follow these steps:
@@ -349,4 +435,4 @@ We welcome contributions! Please follow these steps:
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-Copyright © 2024 Hyphen, Inc. All rights reserved.
+Copyright © 2025 Hyphen, Inc. All rights reserved.

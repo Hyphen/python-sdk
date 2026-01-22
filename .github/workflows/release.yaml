@@ -1,18 +1,43 @@
 name: Release
-                                                                                                                                                                     
+
 on:
-  workflow_dispatch:                                                                                                                                        
-                                                                                                                                                                   
-jobs:                                                                                                                                                              
-  test:                                                                                                                                                            
-    runs-on: ubuntu-latest                                                                                                                                         
-    steps:                                                                                                                                                         
-      - uses: actions/checkout@v4                                                                                                                                  
-                                                                                                                                                                   
-      - name: Set up Python                                                                                                                                        
-        uses: actions/setup-python@v5                                                                                                                              
-        with:                                                                                                                                                      
-          python-version: '3.12'                                                                                                                                   
-                                                                                                                                                                   
-      - name: Placeholder                                                                                                                                          
-        run: echo "Tests workflow placeholder - will be expanded"
+  workflow_dispatch:
+  release:
+    types: [released]
+
+permissions:
+  contents: read
+  id-token: write  # Required for OIDC publishing to PyPI
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev]"
+          pip install build twine
+
+      - name: Run linting
+        run: ruff check hyphen tests
+
+      - name: Run type checking
+        run: mypy hyphen
+
+      - name: Run tests
+        run: pytest --ignore=tests/acceptance
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # No password needed - uses OIDC trusted publishing

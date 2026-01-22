@@ -1,7 +1,7 @@
 """Base client for Hyphen SDK."""
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 import requests
 
@@ -9,7 +9,7 @@ import requests
 class BaseClient:
     """Base client class for making HTTP requests to Hyphen API."""
 
-    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://api.hyphen.ai"):
+    def __init__(self, api_key: str | None = None, base_url: str = "https://api.hyphen.ai"):
         """
         Initialize the base client.
 
@@ -27,8 +27,7 @@ class BaseClient:
         self.session = requests.Session()
         self.session.headers.update(
             {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
+                "x-api-key": self.api_key,
             }
         )
 
@@ -36,8 +35,8 @@ class BaseClient:
         self,
         method: str,
         endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
     ) -> Any:
         """
         Make an HTTP request to the Hyphen API.
@@ -55,11 +54,13 @@ class BaseClient:
             requests.HTTPError: If the request fails
         """
         url = f"{self.base_url}{endpoint}"
+        headers = {"Content-Type": "application/json"} if data is not None else {}
         response = self.session.request(
             method=method,
             url=url,
             json=data,
             params=params,
+            headers=headers,
         )
         response.raise_for_status()
 
@@ -69,17 +70,25 @@ class BaseClient:
 
         return response.json()
 
-    def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Any:
+    def get(self, endpoint: str, params: dict[str, Any] | None = None) -> Any:
         """Make a GET request."""
         return self._request("GET", endpoint, params=params)
 
-    def post(self, endpoint: str, data: Optional[Dict[str, Any]] = None) -> Any:
-        """Make a POST request."""
+    def post(self, endpoint: str, data: dict[str, Any] | None = None) -> Any:
+        """Make a POST request with a dict body."""
         return self._request("POST", endpoint, data=data)
 
-    def put(self, endpoint: str, data: Optional[Dict[str, Any]] = None) -> Any:
+    def post_raw(self, endpoint: str, data: Any) -> Any:
+        """Make a POST request with raw data (e.g., a list)."""
+        return self._request("POST", endpoint, data=data)
+
+    def put(self, endpoint: str, data: dict[str, Any] | None = None) -> Any:
         """Make a PUT request."""
         return self._request("PUT", endpoint, data=data)
+
+    def patch(self, endpoint: str, data: dict[str, Any] | None = None) -> Any:
+        """Make a PATCH request."""
+        return self._request("PATCH", endpoint, data=data)
 
     def delete(self, endpoint: str) -> Any:
         """Make a DELETE request."""

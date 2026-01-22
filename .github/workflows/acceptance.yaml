@@ -1,20 +1,31 @@
-name: Acceptance Tests                                                                                                                                                        
-                                                                                                                                                                     
+name: Acceptance Tests
+
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 6 * * *'  # Daily at 6am UTC                                                                                                                                             
-                                                                                                                                                                   
-jobs:                                                                                                                                                              
-  test:                                                                                                                                                            
-    runs-on: ubuntu-latest                                                                                                                                         
-    steps:                                                                                                                                                         
-      - uses: actions/checkout@v4                                                                                                                                  
-                                                                                                                                                                   
-      - name: Set up Python                                                                                                                                        
-        uses: actions/setup-python@v5                                                                                                                              
-        with:                                                                                                                                                      
-          python-version: '3.12'                                                                                                                                   
-                                                                                                                                                                   
-      - name: Placeholder                                                                                                                                          
-        run: echo "Tests workflow placeholder - will be expanded"
+    - cron: '0 6 * * *'  # Daily at 6am UTC
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run acceptance tests
+        run: pytest tests/acceptance/ -v
+        env:
+          HYPHEN_DEV: ${{ vars.HYPHEN_DEV }}
+          HYPHEN_API_KEY: ${{ secrets.HYPHEN_API_KEY }}
+          HYPHEN_PUBLIC_API_KEY: ${{ secrets.HYPHEN_PUBLIC_API_KEY }}
+          HYPHEN_APPLICATION_ID: ${{ vars.HYPHEN_APPLICATION_ID }}
+          HYPHEN_ORGANIZATION_ID: ${{ vars.HYPHEN_ORGANIZATION_ID }}
+          HYPHEN_PROJECT_ID: ${{ vars.HYPHEN_PROJECT_ID }}
+          HYPHEN_LINK_DOMAIN: ${{ vars.HYPHEN_LINK_DOMAIN }}
