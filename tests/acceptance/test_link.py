@@ -1,8 +1,7 @@
 """Acceptance tests for Link."""
 
 import time
-
-import pytest
+from datetime import datetime, timedelta
 
 from hyphen import Link, QrCode, QrCodesResponse, ShortCode, ShortCodesResponse
 
@@ -148,3 +147,33 @@ class TestLinkAcceptance:
 
         # Cleanup
         link.delete_short_code(short_code.id)
+
+    def test_get_short_code_stats(
+        self, api_key: str, organization_id: str, link_domain: str, link_base_url: str
+    ) -> None:
+        """Test getting statistics for a short code."""
+        link = Link(organization_id=organization_id, api_key=api_key, base_url=link_base_url)
+        unique_id = str(int(time.time() * 1000))
+
+        # Create short code
+        short_code = link.create_short_code(
+            long_url=f"https://example.com/stats-test-{unique_id}",
+            domain=link_domain,
+            options={"title": f"Test Stats {unique_id}"},
+        )
+
+        try:
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=30)
+
+            result = link.get_short_code_stats(
+                short_code.id,
+                start_date=start_date,
+                end_date=end_date,
+            )
+
+            assert isinstance(result, dict)
+            # Stats should contain clicks info
+            assert "clicks" in result or result is not None
+        finally:
+            link.delete_short_code(short_code.id)

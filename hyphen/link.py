@@ -189,9 +189,9 @@ class Link:
         params: dict[str, Any] = {}
 
         if start_date:
-            params["start_date"] = start_date.isoformat()
+            params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
         if end_date:
-            params["end_date"] = end_date.isoformat()
+            params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         return dict(self.client.get(endpoint, params=params if params else None))
 

@@ -5,7 +5,7 @@ import time
 import pytest
 
 from hyphen import FeatureToggle, ToggleContext
-from tests.acceptance.testutil import ToggleAdmin
+from tests.acceptance.testutil import Target, ToggleAdmin
 
 
 @pytest.fixture
@@ -235,3 +235,138 @@ class TestToggleAcceptance:
         result = toggle.get_toggles(["toggle-a", "toggle-b", "toggle-c"])
 
         assert isinstance(result, dict)
+
+    def test_get_boolean_returns_targeted_value_when_user_id_matches(
+        self,
+        admin: ToggleAdmin,
+        public_api_key: str,
+        application_id: str,
+        toggle_base_url: str,
+    ) -> None:
+        """Test GetBoolean returns targeted value when user.id matches."""
+        if not admin.is_configured():
+            pytest.skip(f"Toggle admin not configured: missing {admin.missing_config()}")
+
+        toggle_key = f"test-targeting-user-{int(time.time() * 1000)}"
+        # JSONLogic: if user.id == "the-vip-user", return true
+        targets = [
+            Target(logic='{"==": [{"var": "user.id"}, "the-vip-user"]}', value=True)
+        ]
+        admin.create_boolean_toggle_with_targets(toggle_key, False, targets)
+        try:
+            toggle = FeatureToggle(
+                application_id=application_id,
+                api_key=public_api_key,
+                base_url=toggle_base_url,
+            )
+
+            # With matching user ID
+            result_with_match = toggle.get_boolean(
+                toggle_key,
+                default=False,
+                context=ToggleContext(user={"id": "the-vip-user"}),
+            )
+
+            # With non-matching user ID
+            result_without_match = toggle.get_boolean(
+                toggle_key,
+                default=False,
+                context=ToggleContext(user={"id": "a-regular-user"}),
+            )
+
+            # May fail due to backend caching issue (see note above)
+            assert result_with_match is True, "should return targeted value for matching user"
+            assert result_without_match is False, "should return default value for non-matching user"
+        finally:
+            admin.delete_toggle(toggle_key)
+
+    def test_get_string_returns_targeted_value_based_on_custom_attribute(
+        self,
+        admin: ToggleAdmin,
+        public_api_key: str,
+        application_id: str,
+        toggle_base_url: str,
+    ) -> None:
+        """Test GetString returns targeted value based on custom attribute."""
+        if not admin.is_configured():
+            pytest.skip(f"Toggle admin not configured: missing {admin.missing_config()}")
+
+        toggle_key = f"test-targeting-attr-{int(time.time() * 1000)}"
+        # JSONLogic: if customAttributes.plan == "premium", return "the-premium-feature-value"
+        targets = [
+            Target(
+                logic='{"==": [{"var": "customAttributes.plan"}, "premium"]}',
+                value="the-premium-feature-value",
+            )
+        ]
+        admin.create_string_toggle_with_targets(toggle_key, "the-default-feature-value", targets)
+        try:
+            toggle = FeatureToggle(
+                application_id=application_id,
+                api_key=public_api_key,
+                base_url=toggle_base_url,
+            )
+
+            # With matching custom attribute
+            result_premium = toggle.get_string(
+                toggle_key,
+                default="a-fallback",
+                context=ToggleContext(custom_attributes={"plan": "premium"}),
+            )
+
+            # With non-matching custom attribute
+            result_free = toggle.get_string(
+                toggle_key,
+                default="a-fallback",
+                context=ToggleContext(custom_attributes={"plan": "free"}),
+            )
+
+            # May fail due to backend caching issue (see note above)
+            assert result_premium == "the-premium-feature-value", "should return targeted value for premium plan"
+            assert result_free == "the-default-feature-value", "should return default value for free plan"
+        finally:
+            admin.delete_toggle(toggle_key)
+
+    def test_get_boolean_returns_targeted_value_based_on_targeting_key(
+        self,
+        admin: ToggleAdmin,
+        public_api_key: str,
+        application_id: str,
+        toggle_base_url: str,
+    ) -> None:
+        """Test GetBoolean returns targeted value based on targeting key."""
+        if not admin.is_configured():
+            pytest.skip(f"Toggle admin not configured: missing {admin.missing_config()}")
+
+        toggle_key = f"test-targeting-key-{int(time.time() * 1000)}"
+        # JSONLogic: if targetingKey == "the-beta-tester", return true
+        targets = [
+            Target(logic='{"==": [{"var": "targetingKey"}, "the-beta-tester"]}', value=True)
+        ]
+        admin.create_boolean_toggle_with_targets(toggle_key, False, targets)
+        try:
+            toggle = FeatureToggle(
+                application_id=application_id,
+                api_key=public_api_key,
+                base_url=toggle_base_url,
+            )
+
+            # With matching targeting key
+            result_beta = toggle.get_boolean(
+                toggle_key,
+                default=False,
+                context=ToggleContext(targeting_key="the-beta-tester"),
+            )
+
+            # With non-matching targeting key
+            result_regular = toggle.get_boolean(
+                toggle_key,
+                default=False,
+                context=ToggleContext(targeting_key="a-regular-user"),
+            )
+
+            # May fail due to backend caching issue (see note above)
+            assert result_beta is True, "should return targeted value for beta tester"
+            assert result_regular is False, "should return default value for regular user"
+        finally:
+            admin.delete_toggle(toggle_key)
