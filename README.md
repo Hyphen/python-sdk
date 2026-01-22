@@ -400,6 +400,23 @@ ruff check hyphen tests
 mypy hyphen
 ```
 
+### Releasing
+
+Releases are published to [PyPI](https://pypi.org/project/hyphen/) automatically when a GitHub Release is created.
+
+To release a new version:
+
+1. Update the version in `pyproject.toml` and `hyphen/__init__.py`
+2. Commit the version change: `git commit -am "chore: bump version to X.Y.Z"`
+3. Push to main: `git push origin main`
+4. Create a new [GitHub Release](https://github.com/Hyphen/python-sdk/releases/new):
+   - Tag: `vX.Y.Z` (e.g., `v0.1.0`)
+   - Title: `vX.Y.Z`
+   - Description: Release notes
+5. The release workflow will automatically run tests and publish to PyPI
+
+**Note:** Ensure `PYPI_API_TOKEN` is configured in the repository secrets.
+
 ## Contributing
 
 We welcome contributions! Please follow these steps:

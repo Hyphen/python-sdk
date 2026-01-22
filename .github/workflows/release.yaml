@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  release:
+    types: [released]
+
+permissions:
+  contents: read
+
+env:
+  HYPHEN_PUBLIC_API_KEY: ${{ secrets.HYPHEN_PUBLIC_API_KEY }}
+  HYPHEN_API_KEY: ${{ secrets.HYPHEN_API_KEY }}
+  HYPHEN_APPLICATION_ID: ${{ secrets.HYPHEN_APPLICATION_ID }}
+  HYPHEN_ORGANIZATION_ID: ${{ secrets.HYPHEN_ORGANIZATION_ID }}
+  HYPHEN_PROJECT_ID: ${{ secrets.HYPHEN_PROJECT_ID }}
+  HYPHEN_LINK_DOMAIN: ${{ secrets.HYPHEN_LINK_DOMAIN }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev]"
+          pip install build twine
+
+      - name: Run linting
+        run: ruff check hyphen tests
+
+      - name: Run type checking
+        run: mypy hyphen
+
+      - name: Run tests
+        run: pytest
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
