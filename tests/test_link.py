@@ -66,7 +66,7 @@ def test_create_short_code(mock_client_class: Mock) -> None:
 def test_update_short_code(mock_client_class: Mock) -> None:
     """Test update_short_code method returns ShortCode."""
     mock_client = Mock()
-    mock_client.put.return_value = {
+    mock_client.patch.return_value = {
         "id": "sc_123",
         "code": "abc123",
         "long_url": "https://hyphen.ai",
@@ -81,7 +81,7 @@ def test_update_short_code(mock_client_class: Mock) -> None:
 
     assert isinstance(result, ShortCode)
     assert result.title == "Updated"
-    mock_client.put.assert_called_once_with(
+    mock_client.patch.assert_called_once_with(
         "/api/organizations/org_123/link/codes/abc123",
         data={"title": "Updated"}
     )
@@ -152,7 +152,7 @@ def test_get_tags(mock_client_class: Mock) -> None:
 
     assert len(result) == 3
     assert "tag1" in result
-    mock_client.get.assert_called_once_with("/api/organizations/org_123/link/tags")
+    mock_client.get.assert_called_once_with("/api/organizations/org_123/link/codes/tags")
 
 
 @patch("hyphen.link.BaseClient")
@@ -218,7 +218,7 @@ def test_get_qr_code(mock_client_class: Mock) -> None:
 
     assert isinstance(result, QrCode)
     assert result.id == "qr_123"
-    mock_client.get.assert_called_once_with("/api/organizations/org_123/link/codes/abc123/qr/qr_123")
+    mock_client.get.assert_called_once_with("/api/organizations/org_123/link/codes/abc123/qrs/qr_123")
 
 
 @patch("hyphen.link.BaseClient")
@@ -240,7 +240,7 @@ def test_get_qr_codes(mock_client_class: Mock) -> None:
     assert result.total == 2
     assert len(result.data) == 2
     mock_client.get.assert_called_once_with(
-        "/api/organizations/org_123/link/codes/abc123/qr", params=None
+        "/api/organizations/org_123/link/codes/abc123/qrs", params=None
     )
 
 
@@ -255,4 +255,4 @@ def test_delete_qr_code(mock_client_class: Mock) -> None:
     result = link.delete_qr_code("abc123", "qr_123")
 
     assert result is None
-    mock_client.delete.assert_called_once_with("/api/organizations/org_123/link/codes/abc123/qr/qr_123")
+    mock_client.delete.assert_called_once_with("/api/organizations/org_123/link/codes/abc123/qrs/qr_123")

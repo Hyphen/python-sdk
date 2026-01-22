@@ -63,7 +63,7 @@ class FeatureToggle:
             )
 
         self.environment = (
-            environment or os.environ.get("HYPHEN_ENVIRONMENT") or "development"
+            environment or os.environ.get("HYPHEN_ENVIRONMENT") or "production"
         )
         self.default_context = default_context
         self.on_error = on_error

@@ -91,10 +91,9 @@ class TestBuildPayload:
 
         payload = toggle._build_payload()
 
-        assert payload == {
-            "application": "the_app_id",
-            "environment": "the_environment",
-        }
+        assert payload["application"] == "the_app_id"
+        assert payload["environment"] == "the_environment"
+        assert "targetingKey" in payload  # Always generated when not provided
 
     def test_build_payload_with_full_context(self) -> None:
         """Test payload building with full context."""

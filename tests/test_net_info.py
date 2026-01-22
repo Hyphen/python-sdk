@@ -27,7 +27,7 @@ def test_get_ip_info(mock_client_class: Mock) -> None:
     assert result.ip_type == "ipv4"
     assert result.location.country == "United States"
     assert result.location.city == "Mountain View"
-    mock_client.get.assert_called_once_with("/api/net-info/ip/8.8.8.8")
+    mock_client.get.assert_called_once_with("/ip/8.8.8.8")
 
 
 @patch("hyphen.net_info.BaseClient")
@@ -53,10 +53,12 @@ def test_get_ip_info_error(mock_client_class: Mock) -> None:
 def test_get_ip_infos(mock_client_class: Mock) -> None:
     """Test get_ip_infos method returns list of IpInfo."""
     mock_client = Mock()
-    mock_client.post.return_value = [
-        {"ip": "8.8.8.8", "type": "ipv4", "location": {"country": "United States"}},
-        {"ip": "1.1.1.1", "type": "ipv4", "location": {"country": "Australia"}},
-    ]
+    mock_client.post_raw.return_value = {
+        "data": [
+            {"ip": "8.8.8.8", "type": "ipv4", "location": {"country": "United States"}},
+            {"ip": "1.1.1.1", "type": "ipv4", "location": {"country": "Australia"}},
+        ]
+    }
     mock_client_class.return_value = mock_client
 
     net_info = NetInfo(api_key="key_123")
@@ -69,20 +71,19 @@ def test_get_ip_infos(mock_client_class: Mock) -> None:
     assert isinstance(result[1], IpInfo)
     assert result[1].ip == "1.1.1.1"
     assert result[1].location.country == "Australia"
-    mock_client.post.assert_called_once_with(
-        "/api/net-info/ips",
-        data={"ips": ["8.8.8.8", "1.1.1.1"]}
-    )
+    mock_client.post_raw.assert_called_once_with("/ip", data=["8.8.8.8", "1.1.1.1"])
 
 
 @patch("hyphen.net_info.BaseClient")
 def test_get_ip_infos_with_errors(mock_client_class: Mock) -> None:
     """Test get_ip_infos method handles mixed results with errors."""
     mock_client = Mock()
-    mock_client.post.return_value = [
-        {"ip": "8.8.8.8", "type": "ipv4", "location": {"country": "United States"}},
-        {"ip": "invalid", "type": "error", "errorMessage": "Invalid IP"},
-    ]
+    mock_client.post_raw.return_value = {
+        "data": [
+            {"ip": "8.8.8.8", "type": "ipv4", "location": {"country": "United States"}},
+            {"ip": "invalid", "type": "error", "errorMessage": "Invalid IP"},
+        ]
+    }
     mock_client_class.return_value = mock_client
 
     net_info = NetInfo(api_key="key_123")
