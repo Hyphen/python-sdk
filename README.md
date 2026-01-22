@@ -415,7 +415,7 @@ To release a new version:
    - Description: Release notes
 5. The release workflow will automatically run tests and publish to PyPI
 
-**Note:** Ensure `PYPI_API_TOKEN` is configured in the repository secrets.
+**Note:** Publishing uses PyPI's trusted publisher (OIDC) - no API token needed.
 
 ## Contributing
 
