@@ -275,8 +275,8 @@ class TestToggleAcceptance:
             )
 
             # May fail due to backend caching issue (see note above)
-            assert result_with_match is True, "should return targeted value for matching user"
-            assert result_without_match is False, "should return default value for non-matching user"
+            assert result_with_match is True, "should return targeted value for match"
+            assert result_without_match is False, "should return default for non-match"
         finally:
             admin.delete_toggle(toggle_key)
 
@@ -322,8 +322,8 @@ class TestToggleAcceptance:
             )
 
             # May fail due to backend caching issue (see note above)
-            assert result_premium == "the-premium-feature-value", "should return targeted value for premium plan"
-            assert result_free == "the-default-feature-value", "should return default value for free plan"
+            assert result_premium == "the-premium-feature-value"
+            assert result_free == "the-default-feature-value"
         finally:
             admin.delete_toggle(toggle_key)
 
