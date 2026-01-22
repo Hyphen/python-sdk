@@ -1,6 +1,7 @@
 """Feature Toggle management for Hyphen SDK."""
 
 import os
+import random
 from collections.abc import Callable
 from typing import Any
 
@@ -28,7 +29,7 @@ class FeatureToggle:
         application_id: str | None = None,
         environment: str | None = None,
         api_key: str | None = None,
-        base_url: str = "https://api.hyphen.ai",
+        base_url: str = "https://toggle.hyphen.cloud",
         default_context: ToggleContext | None = None,
         on_error: Callable[[Exception], None] | None = None,
     ):
@@ -62,7 +63,7 @@ class FeatureToggle:
             )
 
         self.environment = (
-            environment or os.environ.get("HYPHEN_ENVIRONMENT") or "production"
+            environment or os.environ.get("HYPHEN_ENVIRONMENT") or "development"
         )
         self.default_context = default_context
         self.on_error = on_error
@@ -79,8 +80,14 @@ class FeatureToggle:
             "environment": self.environment,
         }
 
-        if ctx.targeting_key:
-            payload["targetingKey"] = ctx.targeting_key
+        # targetingKey is required - use provided, user.id, or generate one
+        targeting_key = ctx.targeting_key
+        if not targeting_key and ctx.user and ctx.user.get("id"):
+            targeting_key = ctx.user["id"]
+        if not targeting_key:
+            targeting_key = self._generate_targeting_key()
+        payload["targetingKey"] = targeting_key
+
         if ctx.ip_address:
             payload["ipAddress"] = ctx.ip_address
         if ctx.user:
@@ -96,6 +103,16 @@ class FeatureToggle:
             payload["customAttributes"] = ctx.custom_attributes
 
         return payload
+
+    def _generate_targeting_key(self) -> str:
+        """Generate a random targeting key."""
+        components = []
+        if self.application_id:
+            components.append(self.application_id)
+        if self.environment:
+            components.append(self.environment)
+        components.append(str(random.randint(0, 2**63 - 1)))
+        return "-".join(components)
 
     def _handle_error(self, error: Exception, default: Any) -> Any:
         """Handle errors based on on_error callback configuration."""

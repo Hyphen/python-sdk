@@ -13,6 +13,22 @@ def _require_env(name: str) -> str:
     return value
 
 
+def _is_dev_mode() -> bool:
+    """Check if HYPHEN_DEV is set to true."""
+    return os.environ.get("HYPHEN_DEV", "").lower() == "true"
+
+
+# Dev URLs
+DEV_TOGGLE_URL = "https://dev-horizon.hyphen.ai"
+DEV_NETINFO_URL = "https://dev.net.info"
+DEV_LINK_URL = "https://dev-api.hyphen.ai"
+
+# Production URLs
+PROD_TOGGLE_URL = "https://toggle.hyphen.cloud"
+PROD_NETINFO_URL = "https://net.info"
+PROD_LINK_URL = "https://api.hyphen.ai"
+
+
 @pytest.fixture
 def public_api_key() -> str:
     """Public API key for Toggle service."""
@@ -41,3 +57,21 @@ def organization_id() -> str:
 def link_domain() -> str:
     """Domain for short codes."""
     return _require_env("HYPHEN_LINK_DOMAIN")
+
+
+@pytest.fixture
+def toggle_base_url() -> str:
+    """Base URL for Toggle service."""
+    return DEV_TOGGLE_URL if _is_dev_mode() else PROD_TOGGLE_URL
+
+
+@pytest.fixture
+def netinfo_base_url() -> str:
+    """Base URL for NetInfo service."""
+    return DEV_NETINFO_URL if _is_dev_mode() else PROD_NETINFO_URL
+
+
+@pytest.fixture
+def link_base_url() -> str:
+    """Base URL for Link service."""
+    return DEV_LINK_URL if _is_dev_mode() else PROD_LINK_URL

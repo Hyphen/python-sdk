@@ -2,6 +2,8 @@
 
 import time
 
+import pytest
+
 from hyphen import Link, QrCode, QrCodesResponse, ShortCode, ShortCodesResponse
 
 
@@ -9,10 +11,10 @@ class TestLinkAcceptance:
     """Acceptance tests for Link service."""
 
     def test_create_and_delete_short_code(
-        self, api_key: str, organization_id: str, link_domain: str
+        self, api_key: str, organization_id: str, link_domain: str, link_base_url: str
     ) -> None:
         """Test creating and deleting a short code."""
-        link = Link(organization_id=organization_id, api_key=api_key)
+        link = Link(organization_id=organization_id, api_key=api_key, base_url=link_base_url)
         unique_id = str(int(time.time() * 1000))
 
         # Create
@@ -28,13 +30,13 @@ class TestLinkAcceptance:
         assert result.domain == link_domain
 
         # Cleanup
-        link.delete_short_code(result.code)
+        link.delete_short_code(result.id)
 
     def test_get_short_code(
-        self, api_key: str, organization_id: str, link_domain: str
+        self, api_key: str, organization_id: str, link_domain: str, link_base_url: str
     ) -> None:
-        """Test getting a short code by code."""
-        link = Link(organization_id=organization_id, api_key=api_key)
+        """Test getting a short code by ID."""
+        link = Link(organization_id=organization_id, api_key=api_key, base_url=link_base_url)
         unique_id = str(int(time.time() * 1000))
 
         # Create
@@ -43,22 +45,21 @@ class TestLinkAcceptance:
             domain=link_domain,
         )
 
-        try:
-            # Get
-            result = link.get_short_code(created.code)
+        # Get
+        result = link.get_short_code(created.id)
 
-            assert isinstance(result, ShortCode)
-            assert result.code == created.code
-            assert result.id == created.id
-        finally:
-            # Cleanup
-            link.delete_short_code(created.code)
+        assert isinstance(result, ShortCode)
+        assert result.code == created.code
+        assert result.id == created.id
+
+        # Cleanup
+        link.delete_short_code(created.id)
 
     def test_get_short_codes(
-        self, api_key: str, organization_id: str
+        self, api_key: str, organization_id: str, link_base_url: str
     ) -> None:
         """Test listing short codes."""
-        link = Link(organization_id=organization_id, api_key=api_key)
+        link = Link(organization_id=organization_id, api_key=api_key, base_url=link_base_url)
 
         result = link.get_short_codes()
 
@@ -67,10 +68,10 @@ class TestLinkAcceptance:
         assert isinstance(result.data, list)
 
     def test_update_short_code(
-        self, api_key: str, organization_id: str, link_domain: str
+        self, api_key: str, organization_id: str, link_domain: str, link_base_url: str
     ) -> None:
         """Test updating a short code."""
-        link = Link(organization_id=organization_id, api_key=api_key)
+        link = Link(organization_id=organization_id, api_key=api_key, base_url=link_base_url)
         unique_id = str(int(time.time() * 1000))
 
         # Create
@@ -80,32 +81,31 @@ class TestLinkAcceptance:
             options={"title": "Original Title"},
         )
 
-        try:
-            # Update
-            result = link.update_short_code(
-                created.code,
-                {"title": "Updated Title"},
-            )
+        # Update
+        result = link.update_short_code(
+            created.id,
+            {"title": "Updated Title"},
+        )
 
-            assert isinstance(result, ShortCode)
-            assert result.title == "Updated Title"
-        finally:
-            # Cleanup
-            link.delete_short_code(created.code)
+        assert isinstance(result, ShortCode)
+        assert result.title == "Updated Title"
 
-    def test_get_tags(self, api_key: str, organization_id: str) -> None:
+        # Cleanup
+        link.delete_short_code(created.id)
+
+    def test_get_tags(self, api_key: str, organization_id: str, link_base_url: str) -> None:
         """Test getting all tags."""
-        link = Link(organization_id=organization_id, api_key=api_key)
+        link = Link(organization_id=organization_id, api_key=api_key, base_url=link_base_url)
 
         result = link.get_tags()
 
         assert isinstance(result, list)
 
     def test_create_and_delete_qr_code(
-        self, api_key: str, organization_id: str, link_domain: str
+        self, api_key: str, organization_id: str, link_domain: str, link_base_url: str
     ) -> None:
         """Test creating and deleting a QR code."""
-        link = Link(organization_id=organization_id, api_key=api_key)
+        link = Link(organization_id=organization_id, api_key=api_key, base_url=link_base_url)
         unique_id = str(int(time.time() * 1000))
 
         # Create short code first
@@ -114,27 +114,25 @@ class TestLinkAcceptance:
             domain=link_domain,
         )
 
-        try:
-            # Create QR code
-            qr = link.create_qr_code(
-                short_code.code,
-                options={"title": f"Test QR {unique_id}"},
-            )
+        # Create QR code
+        qr = link.create_qr_code(
+            short_code.id,
+            options={"title": f"Test QR {unique_id}"},
+        )
 
-            assert isinstance(qr, QrCode)
-            assert qr.id != ""
+        assert isinstance(qr, QrCode)
+        assert qr.id != ""
 
-            # Delete QR code
-            link.delete_qr_code(short_code.code, qr.id)
-        finally:
-            # Cleanup short code
-            link.delete_short_code(short_code.code)
+        # Delete QR code
+        link.delete_qr_code(short_code.id, qr.id)
+        # Cleanup short code
+        link.delete_short_code(short_code.id)
 
     def test_get_qr_codes(
-        self, api_key: str, organization_id: str, link_domain: str
+        self, api_key: str, organization_id: str, link_domain: str, link_base_url: str
     ) -> None:
         """Test listing QR codes for a short code."""
-        link = Link(organization_id=organization_id, api_key=api_key)
+        link = Link(organization_id=organization_id, api_key=api_key, base_url=link_base_url)
         unique_id = str(int(time.time() * 1000))
 
         # Create short code
@@ -143,11 +141,10 @@ class TestLinkAcceptance:
             domain=link_domain,
         )
 
-        try:
-            result = link.get_qr_codes(short_code.code)
+        result = link.get_qr_codes(short_code.id)
 
-            assert isinstance(result, QrCodesResponse)
-            assert result.total >= 0
-        finally:
-            # Cleanup
-            link.delete_short_code(short_code.code)
+        assert isinstance(result, QrCodesResponse)
+        assert result.total >= 0
+
+        # Cleanup
+        link.delete_short_code(short_code.id)

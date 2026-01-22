@@ -11,7 +11,7 @@ class NetInfo:
     def __init__(
         self,
         api_key: str | None = None,
-        base_url: str = "https://api.hyphen.ai",
+        base_url: str = "https://net.info",
     ):
         """
         Initialize the NetInfo client.
@@ -35,7 +35,7 @@ class NetInfo:
         Raises:
             requests.HTTPError: If the request fails
         """
-        endpoint = f"/api/net-info/ip/{ip_address}"
+        endpoint = f"/ip/{ip_address}"
         response = self.client.get(endpoint)
         if "errorMessage" in response:
             return IpInfoError.from_dict(response)
@@ -53,12 +53,18 @@ class NetInfo:
 
         Raises:
             requests.HTTPError: If the request fails
+            ValueError: If ip_addresses is empty
         """
-        endpoint = "/api/net-info/ips"
-        data = {"ips": ip_addresses}
-        response = self.client.post(endpoint, data=data)
+        if not ip_addresses:
+            raise ValueError(
+                "The provided IPs array is invalid. It should be a non-empty array of strings."
+            )
+        endpoint = "/ip"
+        # Send array directly, not wrapped in object
+        response = self.client.post_raw(endpoint, data=ip_addresses)
         results: list[IpInfo | IpInfoError] = []
-        for item in response:
+        # Response is {"data": [...]}
+        for item in response.get("data", []):
             if "errorMessage" in item:
                 results.append(IpInfoError.from_dict(item))
             else:

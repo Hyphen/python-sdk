@@ -94,7 +94,7 @@ class Link:
             requests.HTTPError: If the request fails
         """
         endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}"
-        response = self.client.put(endpoint, data=cast(dict[str, Any], options))
+        response = self.client.patch(endpoint, data=cast(dict[str, Any], options))
         return ShortCode.from_dict(response)
 
     def get_short_code(self, code: str) -> ShortCode:
@@ -161,7 +161,7 @@ class Link:
         Raises:
             requests.HTTPError: If the request fails
         """
-        endpoint = f"/api/organizations/{self.organization_id}/link/tags"
+        endpoint = f"/api/organizations/{self.organization_id}/link/codes/tags"
         response = self.client.get(endpoint)
         return list(response) if response else []
 
@@ -226,7 +226,7 @@ class Link:
         Raises:
             requests.HTTPError: If the request fails
         """
-        endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}/qr"
+        endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}/qrs"
         data: dict[str, Any] = {}
         if options:
             # Convert snake_case to camelCase for API
@@ -252,7 +252,7 @@ class Link:
         Raises:
             requests.HTTPError: If the request fails
         """
-        endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}/qr/{qr_id}"
+        endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}/qrs/{qr_id}"
         response = self.client.get(endpoint)
         return QrCode.from_dict(response)
 
@@ -276,7 +276,7 @@ class Link:
         Raises:
             requests.HTTPError: If the request fails
         """
-        endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}/qr"
+        endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}/qrs"
         params: dict[str, Any] = {}
         if page_number is not None:
             params["pageNum"] = page_number
@@ -297,5 +297,5 @@ class Link:
         Raises:
             requests.HTTPError: If the request fails
         """
-        endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}/qr/{qr_id}"
+        endpoint = f"/api/organizations/{self.organization_id}/link/codes/{code}/qrs/{qr_id}"
         self.client.delete(endpoint)

@@ -27,8 +27,7 @@ class BaseClient:
         self.session = requests.Session()
         self.session.headers.update(
             {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
+                "x-api-key": self.api_key,
             }
         )
 
@@ -55,11 +54,13 @@ class BaseClient:
             requests.HTTPError: If the request fails
         """
         url = f"{self.base_url}{endpoint}"
+        headers = {"Content-Type": "application/json"} if data is not None else {}
         response = self.session.request(
             method=method,
             url=url,
             json=data,
             params=params,
+            headers=headers,
         )
         response.raise_for_status()
 
@@ -74,12 +75,20 @@ class BaseClient:
         return self._request("GET", endpoint, params=params)
 
     def post(self, endpoint: str, data: dict[str, Any] | None = None) -> Any:
-        """Make a POST request."""
+        """Make a POST request with a dict body."""
+        return self._request("POST", endpoint, data=data)
+
+    def post_raw(self, endpoint: str, data: Any) -> Any:
+        """Make a POST request with raw data (e.g., a list)."""
         return self._request("POST", endpoint, data=data)
 
     def put(self, endpoint: str, data: dict[str, Any] | None = None) -> Any:
         """Make a PUT request."""
         return self._request("PUT", endpoint, data=data)
+
+    def patch(self, endpoint: str, data: dict[str, Any] | None = None) -> Any:
+        """Make a PATCH request."""
+        return self._request("PATCH", endpoint, data=data)
 
     def delete(self, endpoint: str) -> Any:
         """Make a DELETE request."""

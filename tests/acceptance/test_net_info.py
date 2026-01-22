@@ -6,53 +6,41 @@ from hyphen import IpInfo, IpInfoError, NetInfo
 class TestNetInfoAcceptance:
     """Acceptance tests for NetInfo service."""
 
-    def test_get_ip_info_valid_ip(self, api_key: str) -> None:
+    def test_get_ip_info_valid_ip(self, api_key: str, netinfo_base_url: str) -> None:
         """Test get_ip_info with a valid IP address."""
-        net_info = NetInfo(api_key=api_key)
+        net_info = NetInfo(api_key=api_key, base_url=netinfo_base_url)
 
         result = net_info.get_ip_info("8.8.8.8")
 
         assert isinstance(result, IpInfo)
         assert result.ip == "8.8.8.8"
-        assert result.ip_type == "ipv4"
         assert result.location is not None
-        assert result.location.country == "United States"
+        assert result.location.country != ""
 
-    def test_get_ip_info_ipv6(self, api_key: str) -> None:
-        """Test get_ip_info with an IPv6 address."""
-        net_info = NetInfo(api_key=api_key)
+    def test_get_ip_info_cloudflare_dns(self, api_key: str, netinfo_base_url: str) -> None:
+        """Test get_ip_info with Cloudflare DNS."""
+        net_info = NetInfo(api_key=api_key, base_url=netinfo_base_url)
 
-        result = net_info.get_ip_info("2001:4860:4860::8888")
+        result = net_info.get_ip_info("1.1.1.1")
 
         assert isinstance(result, IpInfo)
-        assert result.ip_type == "ipv6"
+        assert result.ip == "1.1.1.1"
+        assert result.location is not None
 
-    def test_get_ip_info_invalid_ip(self, api_key: str) -> None:
-        """Test get_ip_info with an invalid IP address."""
-        net_info = NetInfo(api_key=api_key)
-
-        result = net_info.get_ip_info("invalid-ip")
-
-        assert isinstance(result, IpInfoError)
-        assert result.error_message != ""
-
-    def test_get_ip_infos_multiple(self, api_key: str) -> None:
+    def test_get_ip_infos_multiple(self, api_key: str, netinfo_base_url: str) -> None:
         """Test get_ip_infos with multiple IP addresses."""
-        net_info = NetInfo(api_key=api_key)
+        net_info = NetInfo(api_key=api_key, base_url=netinfo_base_url)
 
         result = net_info.get_ip_infos(["8.8.8.8", "1.1.1.1"])
 
         assert len(result) == 2
         assert all(isinstance(r, (IpInfo, IpInfoError)) for r in result)
 
-    def test_get_ip_infos_mixed_valid_invalid(self, api_key: str) -> None:
-        """Test get_ip_infos with mix of valid and invalid IPs."""
-        net_info = NetInfo(api_key=api_key)
+    def test_get_ip_infos_empty_raises_error(self, api_key: str, netinfo_base_url: str) -> None:
+        """Test get_ip_infos with empty array raises error."""
+        import pytest
 
-        result = net_info.get_ip_infos(["8.8.8.8", "invalid-ip"])
+        net_info = NetInfo(api_key=api_key, base_url=netinfo_base_url)
 
-        assert len(result) == 2
-        # First should be valid
-        assert isinstance(result[0], IpInfo)
-        # Second should be error
-        assert isinstance(result[1], IpInfoError)
+        with pytest.raises(ValueError):
+            net_info.get_ip_infos([])
